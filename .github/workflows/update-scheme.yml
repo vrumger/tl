@@ -1,0 +1,24 @@
+on:
+    workflow_dispatch:
+    schedule:
+        - cron: '0 12 * * *'
+
+jobs:
+    update:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-node@v2
+              with:
+                  node-version: 14
+            - run: npm ci
+            - run: npm start
+            - uses: peter-evans/create-pull-request@v3
+              with:
+                  commit-message: Update TL scheme
+                  title: Update TL scheme
+                  body:
+                  author: Lungers Bot <github-bot@lungers.com>
+                  branch: update-tl-scheme
+                  labels: scheme update
+                  delete-branch: true
