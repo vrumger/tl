@@ -43,14 +43,7 @@ const main = async () => {
         }
     }
 
-    let [, layer] = scheme.match(/^\/\/ LAYER (\d+)$/m);
-    if (!layer) {
-        console.error('Unknown layer');
-        process.exit(1);
-    } else if (isNaN(layer)) {
-        console.error('Invalid layer:', layer);
-        process.exit(1);
-    }
+    let [, layer = 'unknown'] = scheme.match(/^\/\/ LAYER (\d+)$/m) || [];
 
     let schemeFilePath = path.join(SCHEMES_DIR, `${layer}.tl`);
     if (await fileExists(schemeFilePath)) {
