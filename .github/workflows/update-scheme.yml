@@ -13,9 +13,4 @@ jobs:
                   node-version: 14
             - run: npm ci
             - run: npm start
-            - run: |
-                  git config --global user.name "Lungers Bot"
-                  git config --global user.email "github-bot@lungers.com"
-                  git add .
-                  git commit -m "Update TL scheme"
-                  git push
+            - run: ./commit.sh
