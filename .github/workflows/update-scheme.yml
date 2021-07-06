@@ -13,12 +13,9 @@ jobs:
                   node-version: 14
             - run: npm ci
             - run: npm start
-            - uses: peter-evans/create-pull-request@v3
-              with:
-                  commit-message: Update TL scheme
-                  title: Update TL scheme
-                  body:
-                  author: Lungers Bot <github-bot@lungers.com>
-                  branch: update-tl-scheme
-                  labels: scheme update
-                  delete-branch: true
+            - run: |
+                  git config --global user.name "Lungers Bot"
+                  git config --global user.email "github-bot@lungers.com"
+                  git add .
+                  git commit -m "Update TL scheme"
+                  git push
