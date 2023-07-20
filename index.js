@@ -66,12 +66,16 @@ const checkCommit = async () => {
 
     await fs.writeFile(schemeFilePath, scheme);
     await fs.writeFile(path.join(SCHEMES_DIR, 'latest.tl'), scheme);
+    await fs.writeFile(
+        path.join(SCHEMES_DIR, 'layer.json'),
+        JSON.stringify({ layer, file: schemeFilePath }),
+    );
 };
 
 const updateAllJson = async () => {
     const files = await fs.readdir(SCHEMES_DIR);
     const allJson = files
-        .filter(file => file !== 'all.json')
+        .filter(file => file !== 'all.json' && file !== 'layer.json')
         .reduce((all, file) => {
             if (file === 'latest.tl') {
                 return all;
