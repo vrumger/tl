@@ -1,13 +1,13 @@
 {
-  "name": "tl",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "author": "Andrew Lane <contact@lungers.com>",
-  "license": "MIT",
-  "dependencies": {
-    "node-fetch": "^2.6.1"
-  }
+    "name": "tl",
+    "version": "1.0.0",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "author": "Avrumy <contact@lungers.com>",
+    "license": "MIT",
+    "dependencies": {
+        "simple-git": "^3.19.1"
+    }
 }

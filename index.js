@@ -1,10 +1,8 @@
 const fs = require('fs/promises');
 const path = require('path');
-const fetch = require('node-fetch');
+const { default: simpleGit } = require('simple-git');
 
 const SCHEMES_DIR = 'schemes';
-const RAW_SCHEME =
-    'https://raw.githubusercontent.com/telegramdesktop/tdesktop/dev/Telegram/Resources/tl/api.tl';
 
 const fileExists = async file => {
     try {
@@ -29,21 +27,17 @@ const sortSchemes = schemes => {
     });
 };
 
-const main = async () => {
-    const request = await fetch(RAW_SCHEME);
-    const scheme = await request.text();
+const checkCommit = async () => {
+    const scheme = await fs.readFile(
+        '/tmp/tdesktop/Telegram/SourceFiles/mtproto/scheme/api.tl',
+        'utf-8',
+    );
+    const layerFile = await fs.readFile(
+        '/tmp/tdesktop/Telegram/SourceFiles/mtproto/scheme/layer.tl',
+        'utf-8',
+    );
 
-    try {
-        await fs.stat(SCHEMES_DIR);
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            await fs.mkdir(SCHEMES_DIR, { recursive: true });
-        } else {
-            throw error;
-        }
-    }
-
-    let [, layer = 'unknown'] = scheme.match(/^\/\/ LAYER (\d+)$/m) || [];
+    let [, layer = 'unknown'] = layerFile.match(/^\/\/ LAYER (\d+)$/m) || [];
 
     let schemeFilePath = path.join(SCHEMES_DIR, `${layer}.tl`);
     if (await fileExists(schemeFilePath)) {
@@ -72,7 +66,9 @@ const main = async () => {
 
     await fs.writeFile(schemeFilePath, scheme);
     await fs.writeFile(path.join(SCHEMES_DIR, 'latest.tl'), scheme);
+};
 
+const updateAllJson = async () => {
     const files = await fs.readdir(SCHEMES_DIR);
     const allJson = files
         .filter(file => file !== 'all.json')
@@ -99,6 +95,42 @@ const main = async () => {
         path.join(SCHEMES_DIR, 'all.json'),
         JSON.stringify(allJson, null, 2),
     );
+};
+
+const main = async () => {
+    let git = simpleGit();
+    await git.clone(
+        'https://github.com/telegramdesktop/tdesktop',
+        '/tmp/tdesktop',
+    );
+
+    git = simpleGit('/tmp/tdesktop');
+
+    const lastCommit = await fs.readFile('last-commit.txt', 'utf-8');
+
+    await git.checkout('dev');
+    const commits = await git.raw(
+        'log',
+        '--reverse',
+        `${lastCommit}...HEAD`,
+        '--pretty=format:%H',
+        '--',
+        'Telegram/SourceFiles/mtproto/scheme/',
+    );
+
+    if (!commits) {
+        console.log('No new commits');
+        return;
+    }
+
+    for (const commit of commits.split('\n')) {
+        console.log('Checking commit', commit);
+        await git.checkout(commit);
+        await checkCommit();
+        await fs.writeFile('last-commit.txt', commit);
+    }
+
+    await updateAllJson();
 };
 
 main().catch(error => {
