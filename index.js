@@ -20,11 +20,9 @@ const fileExists = async file => {
 };
 
 const sortSchemes = schemes => {
-    return schemes.sort((a, b) => {
-        const [, aN = 0] = a.slice(0, -3).split('-');
-        const [, bN = 0] = b.slice(0, -3).split('-');
-        return Number(aN) - Number(bN);
-    });
+    return schemes.sort((a, b) =>
+        a.localeCompare(b, undefined, { numeric: true }),
+    );
 };
 
 const checkCommit = async () => {
@@ -73,7 +71,7 @@ const checkCommit = async () => {
 };
 
 const updateAllJson = async () => {
-    const files = await fs.readdir(SCHEMES_DIR);
+    const files = sortSchemes(await fs.readdir(SCHEMES_DIR));
     const allJson = files
         .filter(file => file !== 'all.json' && file !== 'layer.json')
         .reduce((all, file) => {
