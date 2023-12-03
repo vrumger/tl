@@ -51,6 +51,7 @@ const checkCommit = async () => {
     }
 
     let schemeFilePath = path.join(SCHEMES_DIR, `${layer}.tl`);
+    let count = 0;
     if (await fileExists(schemeFilePath)) {
         const previousSchemes = sortSchemes(
             (await fs.readdir(SCHEMES_DIR)).filter(
@@ -68,10 +69,9 @@ const checkCommit = async () => {
             return;
         }
 
-        let count = 1;
         while (await fileExists(schemeFilePath)) {
-            schemeFilePath = path.join(SCHEMES_DIR, `${layer}-${count}.tl`);
             count++;
+            schemeFilePath = path.join(SCHEMES_DIR, `${layer}-${count}.tl`);
         }
     }
 
@@ -81,6 +81,8 @@ const checkCommit = async () => {
         path.join(SCHEMES_DIR, 'layer.json'),
         JSON.stringify({ layer, file: schemeFilePath }),
     );
+
+    return { layer, count };
 };
 
 const updateAllJson = async () => {
@@ -113,18 +115,20 @@ const updateAllJson = async () => {
 };
 
 const main = async () => {
-    let git = simpleGit();
-    await git.clone(
+    const git = simpleGit();
+    let tdesktop = simpleGit();
+
+    await tdesktop.clone(
         'https://github.com/telegramdesktop/tdesktop',
         '/tmp/tdesktop',
     );
 
-    git = simpleGit('/tmp/tdesktop');
+    tdesktop = simpleGit('/tmp/tdesktop');
 
     const lastCommit = await fs.readFile('last-commit.txt', 'utf-8');
 
-    await git.checkout('dev');
-    const commits = await git.raw(
+    await tdesktop.checkout('dev');
+    const commits = await tdesktop.raw(
         'log',
         '--reverse',
         `${lastCommit}...HEAD`,
@@ -140,12 +144,17 @@ const main = async () => {
 
     for (const commit of commits.split('\n')) {
         console.log('Checking commit', commit);
-        await git.checkout(commit);
-        await checkCommit();
-        await fs.writeFile('last-commit.txt', commit);
-    }
+        await tdesktop.checkout(commit);
 
-    await updateAllJson();
+        const { layer, count } = await checkCommit();
+
+        await fs.writeFile('last-commit.txt', commit);
+        await updateAllJson();
+
+        await git
+            .add(['schemes', 'last-commit.txt'])
+            .commit(`Update to layer ${layer}${count ? ` (${count})` : ''}`);
+    }
 };
 
 main().catch(error => {
