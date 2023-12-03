@@ -25,17 +25,30 @@ const sortSchemes = schemes => {
     );
 };
 
+const parseLayer = scheme => {
+    const [, layer = 'unknown'] = scheme.match(/^\/\/ LAYER (\d+)$/m) || [];
+    return layer;
+};
+
 const checkCommit = async () => {
     const scheme = await fs.readFile(
         '/tmp/tdesktop/Telegram/SourceFiles/mtproto/scheme/api.tl',
         'utf-8',
     );
-    const layerFile = await fs.readFile(
-        '/tmp/tdesktop/Telegram/SourceFiles/mtproto/scheme/layer.tl',
-        'utf-8',
-    );
 
-    let [, layer = 'unknown'] = layerFile.match(/^\/\/ LAYER (\d+)$/m) || [];
+    let layer = parseLayer(scheme);
+    if (layer === 'unknown') {
+        const layerFile = await fs.readFile(
+            '/tmp/tdesktop/Telegram/SourceFiles/mtproto/scheme/layer.tl',
+            'utf-8',
+        );
+        layer = parseLayer(layerFile);
+    }
+
+    if (!layer) {
+        console.log('No layer found');
+        return;
+    }
 
     let schemeFilePath = path.join(SCHEMES_DIR, `${layer}.tl`);
     if (await fileExists(schemeFilePath)) {
